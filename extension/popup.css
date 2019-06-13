@@ -1,0 +1,341 @@
+/*
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:root {
+  --normal-text-size: 0.813em;
+  --emphasis-text-size: 0.875em;
+  --header-text-size: 1em;
+  --google-blue-500: #4285f4;
+  --google-grey-700: #5f6368;
+  --google-grey-800: #3c4043;
+  --google-grey-900: #202124;
+  --hover-highlight: rgba(32, 33, 36, 0.08);
+}
+
+body {
+  background: #fff;
+  font-family: 'Roboto', 'DejaVu Sans', 'Arial', Sans-Serif;
+  font-size: 100%;
+  margin: 16px;
+  width: 300px;
+}
+
+#confirmation,
+#error {
+  display: none;
+}
+
+.header {
+  color: var(--google-grey-900);
+  font-size: var(--header-text-size);
+  font-weight: 400;
+  margin: 0;
+  padding-bottom: 8px;
+}
+
+.section {
+  padding-bottom: 8px;
+}
+
+.section-title {
+  color: var(--google-grey-900);
+  font-size: var(--emphasis-text-size);
+  font-weight: 400;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.site-info-alert {
+  color: var(--google-grey-700);
+  font-size: var(--normal-text-size);
+  padding-top: 8px;
+}
+
+.no-alerts {
+  list-style: none;
+  padding-left: 28px;
+}
+
+.caption {
+  color: var(--google-grey-700);
+  display: block;
+  font-size: 92%;
+  padding-top: 6px;
+  word-wrap: break-word;
+}
+
+ul {
+  margin: 0;
+}
+
+.details-list {
+  list-style: none;
+  padding: 0;
+}
+
+.list-item {
+  padding: 8px 0;
+}
+
+.detail-container {
+  color: var(--google-grey-800);
+  cursor: pointer;
+  display: block;
+  font-size: var(--normal-text-size);
+  position: relative;
+  padding-left: 28px;
+  user-select: none;
+}
+
+/* Custom checkbox */
+
+.detail-container input {
+  cursor: pointer;
+  height: 0;
+  opacity: 0;
+  position: absolute;
+  width: 0;
+}
+
+.disabled-container {
+  cursor: default;
+}
+
+/* Draw the bounding box */
+.checkbox {
+  background-color: #fff;
+  border-radius: 2px;
+  border: 2px solid var(--google-grey-700);
+  height: var(--normal-text-size);
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: var(--normal-text-size);
+}
+
+.disabled-checkbox {
+  height: 1.25em;
+  left: 0;
+  width: 1.25em;
+}
+
+/* Style the background of a checked box */
+.detail-container input:checked ~ .checkbox {
+  background-color: var(--google-blue-500);
+  border: 2px solid var(--google-blue-500);
+}
+
+.detail-container input:checked ~ .disabled-checkbox {
+  background-color: #fff;
+  border: none;
+}
+
+.disabled-unchecked-checkbox {
+  background-color: #fff;
+  border: 2px solid #9aa0a6;
+  height: var(--normal-text-size);
+  width: var(--normal-text-size);
+}
+
+/* Hide the default checkbox */
+.checkbox:after {
+  content: '';
+  display: none;
+  position: absolute;
+}
+
+/* Display the checkmark when checked */
+.detail-container input:checked ~ .checkbox:after {
+  display: block;
+}
+
+/* Draw the checkmark */
+.detail-container .checkbox:after {
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  height: 73%;
+  transform: scale(1) rotate(45deg);
+  transform-origin: 100% 80%;
+  width: 36%;
+}
+
+/* Draw the checkmark for a disabled and checked box */
+.detail-container .disabled-checkbox:after {
+  border: solid var(--google-grey-900);
+  border-width: 0 2px 2px 0;
+  height: 73%;
+  transform: scale(1) rotate(45deg);
+  transform-origin: 100% 80%;
+  width: 36%;
+}
+
+/* Preview box */
+
+.preview {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+  max-height: 200px;
+  max-width: 310px;
+}
+
+.data-preview:not(.error-link) a {
+  color: var(--google-blue-500);
+  display: inline-block;
+  position: relative;
+}
+
+.data-preview a span {
+  cursor: default;
+  display: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.data-preview .shown-preview span {
+  bottom: 100%;
+  display: inline-block;
+  left: 50%;
+  margin-left: -64px;
+}
+
+.referrer-bubble {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+  background-color: #fff;
+  color: var(--google-grey-800);
+  list-style: none;
+  overflow: auto;
+  margin-left: -8px;
+  max-height: 150px;
+  padding: 16px;
+  width: 280px;
+  word-wrap: break-word;
+}
+
+.referrer-url {
+  padding-top: 4px;
+}
+
+.referrer-url:not(.truncated) {
+  margin-left: 24px;
+  text-indent: -24px;
+}
+
+.truncated {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multiline {
+  cursor: pointer;
+}
+
+.error-info {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+  background-color: #fff;
+  color: var(--google-grey-800);
+  margin-left: 24px;
+  padding: 16px;
+  width: 212px;
+}
+
+/* Blue button */
+
+.blue-button {
+  cursor: pointer;
+  background-color: var(--google-blue-500);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  float: right;
+  font-family: 'Roboto', 'DejaVu Sans', 'Arial', Sans-Serif;
+  font-size: var(--normal-text-size);
+  font-weight: 500;
+  margin: 16px 0 16px 8px;
+  padding: 8px 16px;
+  transition-timing-function: ease;
+}
+
+.blue-button:hover {
+  background-color: #1a73e8;
+}
+
+/* Confirmation/error dialogs */
+
+.wrapper {
+  align-items: center;
+  display: flex;
+  margin-top: 24px;
+}
+
+.info-text {
+  font-size: var(--emphasis-text-size);
+}
+
+#info-icon {
+  font-size: 24px;
+  margin-right: 16px;
+}
+
+#confirmation-img {
+  display: block;
+  margin: 56px 0 16px 0;
+}
+
+/* Top right close button */
+
+.material-icons.close-button {
+  background-color: transparent;
+  border: none;
+  color: var(--google-grey-700);
+  cursor: pointer;
+  font-size: 20px;
+  margin: 8px 8px 0 0;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.material-icons.close-button:hover {
+  background-color: var(--hover-highlight);
+}
+
+/* Progress indicator */
+
+#progress-container {
+  align-items: center;
+  display: flex;
+  float: right;
+}
+
+.progress-circular {
+  animation: spin 2s infinite linear;
+  border: 3px solid transparent;
+  border-bottom: 3px solid var(--google-blue-500);
+  border-left: 3px solid var(--google-blue-500);
+  border-radius: 50%;
+  border-top: 3px solid var(--google-blue-500);
+  display: inline-block;
+  float: left;
+  height: 20px;
+  width: 20px;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

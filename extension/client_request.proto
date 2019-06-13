@@ -1,0 +1,149 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+package suspiciousSiteReporter.extension;
+
+// ChromeExtensionClientRequest should mirror the version in the Safe Browsing
+// API handler
+message ChromeExtensionClientRequest {
+  // URL that the client reported.
+  optional string url = 1;
+
+  // Screenshot from the client. A SHA-256 hex value will be stored with the
+  // request and the screenshot itself will be stored in a separate table.
+  optional bytes screenshot = 3;
+
+  // Contains the hierarchy of elements on the page.
+  optional string dom = 4;
+
+  // If we can find the complete referrer chain, this field will contains URLs
+  // transitions from landing referrer to event in reverse chronological
+  // order, i.e. event url comes first in this list, and landing referrer
+  // comes last.
+  repeated ReferrerChainEntry referrer_chain = 5;
+
+  // Deprecated tag numbers.
+  reserved 2;
+
+  // next available tag number: 6
+}
+
+// ReferrerChainEntry should be kept in sync with the version in Chromium:
+// https://cs.chromium.org/chromium/src/components/safe_browsing/proto/csd.proto?l=728
+message ReferrerChainEntry {
+  enum URLType {
+    // Convenient default value, should not be used in real ReferrerChainEntry.
+    DEFAULT = 0;
+
+    // URL of safe browsing events that are at the end of the referrer chain.
+    // e.g. URL of a download, URL of a low reputation login page, etc.
+    EVENT_URL = 1;  // e.g.
+
+    // Landing page is the page user directly interacts with to trigger the
+    // above event, e.g. the page where user clicks a download button.
+    LANDING_PAGE = 2;
+
+    // Landing referrer is the one user directly interacts with right before
+    // navigating to the landing page.
+    LANDING_REFERRER = 3;
+
+    // Client redirect refers to committed navigation between landing page and
+    // the targeted event, or between landing referrer page and landing page.
+    // Client redirect is not triggered by user gesture.
+    CLIENT_REDIRECT = 4;
+
+    DEPRECATED_SERVER_REDIRECT = 5;  // Deprecated
+
+    // For Safe Browsing Extended Reporting or Scout users, if the referrer
+    // chain is empty or partially missing, we will add/append recent navigation
+    // events to this list. RECENT_NAVIGATION type is set for these cases.
+    RECENT_NAVIGATION = 6;
+
+    // The REFERRER type is used for entries that recede the LANDING_REFERRER in
+    // the referrer chain, when more than two gestures are included in the
+    // referrer chain.
+    REFERRER = 7;
+  }
+
+  enum NavigationInitiation {
+    // Convenient default value, should not be used in real ReferrerChainEntry.
+    UNDEFINED = 0;
+
+    // Navigation is initiated by the browser process. e.g. user enters url into
+    // address bar, or user opens a bookmark. This isn't perfect reliable due to
+    // some edge cases, such as forward/back navigation and opening a link from
+    // context menu.
+    BROWSER_INITIATED = 1;
+
+    // Navigation is initiated by the renderer process and there is no user
+    // gesture associate with this navigation. e.g.
+    // * redirect via the <meta http-equiv="refresh"> tag
+    // * change window.location.href
+    RENDERER_INITIATED_WITHOUT_USER_GESTURE = 2;
+
+    // Navigation is initiated by the renderer process and there is a clear user
+    // gesture associate with this navigation. e.g.
+    //  * <a> link click
+    //  * using window.history.pushState (i.e. back, forward button interaction)
+    RENDERER_INITIATED_WITH_USER_GESTURE = 3;
+  }
+
+  message ServerRedirect {
+    // [required] server redirect url
+    optional string url = 1;
+
+    // Additional fields for future expansion.
+  }
+
+  // [required] The url of this Entry.
+  optional string url = 1;
+
+  // Only set if it is different from |url|.
+  optional string main_frame_url = 9;
+
+  // Type of URLs, such as event url, landing page, etc.
+  optional URLType type = 2 [default = CLIENT_REDIRECT];
+
+  // IP addresses corresponding to this host.
+  repeated string ip_addresses = 3;
+
+  // Referrer url of this entry.
+  optional string referrer_url = 4;
+
+  // Main frame URL of referrer.
+  // Only set if it is different from |referrer_url|.
+  optional string referrer_main_frame_url = 5;
+
+  // If this URL loads in a different tab/frame from previous one.
+  optional bool is_retargeting = 6;
+
+  optional double navigation_time_msec = 7;
+
+  // Set only if server redirects happened in navigation.
+  // The first entry in |server_redirect_chain| should be the original request
+  // url, and the last entry should be the same as |url|.
+  repeated ServerRedirect server_redirect_chain = 8;
+
+  // How this navigation is initiated.
+  optional NavigationInitiation navigation_initiation = 10;
+
+  // Whether we think this entry may have been launched by an external
+  // application. This will have no false negatives, but some false positives
+  // are possible.
+  optional bool maybe_launched_by_external_application = 11;
+
+  // next available tag number: 12.
+}

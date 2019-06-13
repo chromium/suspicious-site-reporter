@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <meta charset="utf-8">
+</head>
+<body>
+  <button class="material-icons close-button">close</button>
+
+  <!-- Report page -->
+  <div id="main">
+    <h1 class="header">Report site to Google</h1>
+
+    <div class="section" id="site-info">
+      <h2 class="section-title" id="alert-header">What's suspicious about this site</h2>
+      <ul id="alerts"></ul>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Details included with your report:</h2>
+      <ul class="details-list" role="group" aria-label="List with checkbox items">
+        <li class="list-item" role="checkbox" aria-checked="true">
+          <label class="detail-container disabled-container" for="url">URL
+            <input type="checkbox" name="report-data" value="url" id="url"
+                   class="checkbox-control" checked disabled />
+            <span class="checkbox disabled-checkbox"></span>
+            <span class="caption truncated" id="url-preview"></span>
+          </label>
+        </li>
+        <li class="list-item" role="checkbox" aria-checked="true">
+          <label class="detail-container disabled-container" for="ip">IP Address
+            <input type="checkbox" name="report-data" value="ip" id="ip"
+                   class="checkbox-control" checked disabled />
+            <span class="checkbox disabled-checkbox"></span>
+          </label>
+        </li>
+        <li class="list-item" role="checkbox" aria-checked="true">
+          <label class="detail-container" for="screenshot">
+            <div class="data-preview">
+              <a href="#" class="preview-link">Screenshot<span id="screenshot-preview"></span></a>
+            </div>
+            <input type="checkbox" name="report-data" value="screenshot" id="screenshot"
+                   class="checkbox-control" checked />
+            <span class="checkbox"></span>
+          </label>
+        </li>
+        <li class="list-item" role="checkbox" aria-checked="true">
+          <label class="detail-container" for="dom">
+            <div class="data-preview" id="dom-preview-container">
+              <a href="#" class="preview-link">DOM Content<span id="dom-preview"></span></a>
+            </div>
+            <input type="checkbox" name="report-data" value="dom" id="dom"
+                   class="checkbox-control" checked />
+            <span class="checkbox"></span>
+            <span class="caption">Includes all HTML of the site</span>
+          </label>
+        </li>
+        <li class="list-item" role="checkbox" aria-checked="true">
+          <label class="detail-container" for="referrer">
+            <div class="data-preview">
+              <a href="#" class="preview-link">Referrer Chain
+                <span id="referrer-preview">
+                  <ul class="referrer-bubble" id="referrer-urls">
+                    <b>URLs that led to this site</b>
+                  </ul>
+                </span>
+              </a>
+            </div>
+            <input type="checkbox" name="report-data" value="referrer" id="referrer"
+                   class="checkbox-control" checked />
+            <span class="checkbox"></span>
+          </label>
+        </li>
+      </ul>
+    </div>
+
+    <div id="progress-container">
+      <div class="progress-circular" id="progress"></div>
+      <button class="blue-button" id="report-site"><span>Send Report</span></button>
+    </div>
+  </div>
+
+  <!-- Confirmation page -->
+  <div id="confirmation">
+    <h1 class="header">Thanks for your report</h1>
+    <div class="wrapper">
+      <div class="info-text">
+        Thanks for helping make the web a safer place for everyone.
+      </div>
+    </div>
+    <img src="images/confirmation.png"
+         alt="Four people standing around a green checkmark"
+         id="confirmation-img">
+    <button class="blue-button close-button"><span>Close</span></button>
+  </div>
+
+  <!-- Error page -->
+  <div id="error">
+    <h1 class="header">Uh-oh, something went wrong</h1>
+    <div class="wrapper">
+      <i class="material-icons" id="info-icon">error_outline</i>
+      <div class="info-text">
+        Try checking your network connection and re-clicking the extension icon.
+      </div>
+    </div>
+    <button class="blue-button close-button"><span>Close</span></button>
+  </div>
+
+  <script src="popup_bin.js"></script>
+</body>
+</html>
