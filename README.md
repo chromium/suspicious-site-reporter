@@ -2,7 +2,7 @@
 
 Made by Google Chrome extension.
 
-Suspicious Site Reporter is available [at the webstore](https://chrome.google.com/webstore/a/google.com/detail/suspicious-site-reporter/jknemblkbdhdcpllfgbfekkdciegfboi).
+Suspicious Site Reporter is available [at the webstore](https://chrome.google.com/webstore/detail/suspicious-site-reporter/jknemblkbdhdcpllfgbfekkdciegfboi).
 
 With the Suspicious Site Reporter extension, you’ll see an icon when you’re on a
 potentially suspicious site, and more information about why the site is
