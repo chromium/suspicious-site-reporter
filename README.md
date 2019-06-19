@@ -16,7 +16,7 @@ Web Store, but you may also compile the extension yourself by running the
 following from the `extension/` directory:
 
 ```
-./do.sh install_deps
+./do.sh install_deps [os]   // os can be osx, win or linux (default)
 ./do.sh build
 ```
 
