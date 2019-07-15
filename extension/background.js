@@ -116,10 +116,10 @@ class Background {
     const setFlagIconColor = (color, tab) => {
       chrome.browserAction.setIcon({
         path: {
-            '16': `images/${color}flag16.png`,
-            '48': `images/${color}flag48.png`,
-            '128': `images/${color}flag128.png`,
-          },
+          '16': `images/${color}flag16.png`,
+          '48': `images/${color}flag48.png`,
+          '128': `images/${color}flag128.png`,
+        },
         tabId: tab.id,
       });
     };
