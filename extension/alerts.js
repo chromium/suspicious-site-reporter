@@ -133,7 +133,7 @@ const visitedBeforeToday = (domain) => {
 /**
  * Determines whether the site has unusually many subdomains.
  * @param {string} domain The domain of the page.
- * @return {boolean} Whether the site is in the top 5k.
+ * @return {boolean} True if the site has many subdomains.
 */
 const hasManySubdomains = (domain) => {
   const suffix = '.' + Tld.getInstance().getTld(domain, true);
