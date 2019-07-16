@@ -110,6 +110,16 @@ describe('alerts', () => {
         expect(response).toContain(alerts.ALERT_MESSAGES['notVisitedBefore']);
       });
 
+      alerts.computeAlerts('http://many.many.subdomains.test').then((response) => {
+        expect(response.length).toEqual(3);
+	expect(response).toContain(alerts.ALERT_MESSAGES['manySubdomains']);
+      });
+
+      alerts.computeAlerts('http://not-many.subdomains.co.uk').then((response) => {
+        expect(response.length).toEqual(3);
+        expect(response).not.toContain(alerts.ALERT_MESSAGES['manySubdomains']);
+      });
+
       done();
     });
   });

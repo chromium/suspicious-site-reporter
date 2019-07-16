@@ -25,7 +25,11 @@ const ALERT_MESSAGES = {
   'isIDN': 'Domain uses uncommon characters',
   'notTopSite': 'Site not in top 5k sites',
   'notVisitedBefore': 'Haven\'t visited site in the last 3 months',
+  'manySubdomains': 'Unusually many subdomains',
 };
+
+/** @const {number} If a domain has this many subdomains or more, it is flagged. */
+const NUM_SUSPICIOUS_SUBDOMAINS = 4;
 
 /** {!Object<string, boolean>} Dictionary with top site domains as keys. */
 let topSitesList = {};
@@ -127,6 +131,18 @@ const visitedBeforeToday = (domain) => {
 };
 
 /**
+ * Determines whether the site has unusually many subdomains.
+ * @param {string} domain The domain of the page.
+ * @return {boolean} Whether the site is in the top 5k.
+*/
+const hasManySubdomains = (domain) => {
+  const suffix = '.' + Tld.getInstance().getTld(domain, true);
+  const domainPartsWithoutTld =
+      domain.slice(0, domain.indexOf(suffix)).split('.');
+  return domainPartsWithoutTld.length >= NUM_SUSPICIOUS_SUBDOMAINS;
+};
+
+/**
  * Compute alerts and populate alerts array.
  * @param {string} url The URL of the page.
  * @return {!Promise<!Array<string>>} List of alerts for page.
@@ -135,12 +151,14 @@ const computeAlerts = async (url) => {
   const newAlerts = [];
   const domain = getDomain(url).toLowerCase();
   const visited = await visitedBeforeToday(domain);
+  const many_subdomains = hasManySubdomains(domain);
   // Only warn about IDNs when not on a top site.
   if (!isTopSite(domain)) {
     newAlerts.push(ALERT_MESSAGES['notTopSite']);
     if (isIDN(domain)) newAlerts.push(ALERT_MESSAGES['isIDN']);
   }
   if (!visited) newAlerts.push(ALERT_MESSAGES['notVisitedBefore']);
+  if (many_subdomains) newAlerts.push(ALERT_MESSAGES['manySubdomains']);
   return new Promise((resolve) => {
     resolve(newAlerts);
   });
