@@ -151,14 +151,14 @@ const computeAlerts = async (url) => {
   const newAlerts = [];
   const domain = getDomain(url).toLowerCase();
   const visited = await visitedBeforeToday(domain);
-  const many_subdomains = hasManySubdomains(domain);
+  const manySubdomains = hasManySubdomains(domain);
   // Only warn about IDNs when not on a top site.
   if (!isTopSite(domain)) {
     newAlerts.push(ALERT_MESSAGES['notTopSite']);
     if (isIDN(domain)) newAlerts.push(ALERT_MESSAGES['isIDN']);
   }
   if (!visited) newAlerts.push(ALERT_MESSAGES['notVisitedBefore']);
-  if (many_subdomains) newAlerts.push(ALERT_MESSAGES['manySubdomains']);
+  if (manySubdomains) newAlerts.push(ALERT_MESSAGES['manySubdomains']);
   return new Promise((resolve) => {
     resolve(newAlerts);
   });
