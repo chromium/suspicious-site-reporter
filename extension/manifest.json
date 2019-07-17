@@ -1,6 +1,6 @@
 {
     "name": "Suspicious Site Reporter",
-    "version": "1.14",
+    "version": "1.15",
     "description": "Extension for reporting suspicious sites to Safe Browsing.",
     "permissions": [
         "https://safebrowsing.google.com/*",
