@@ -124,22 +124,22 @@ class Background {
       });
     };
 
-    if (alertList.length > 0) {
-      // To reduce noise, show a gray flag if the only signal is the not top
-      // site signal. This works because the top site signal is most useful when
-      // a website is also flagged for other reasons.
-      if (alertList.length === 1 &&
-          alertList.includes(alerts.ALERT_MESSAGES['notTopSite'])) {
-        setFlagIconColor('gray', tab);
-      } else {
-        chrome.browserAction.setBadgeText({
-          text: alertList.length.toString(),
-          tabId: tab.id,
-        });
-        setFlagIconColor('orange', tab);
-      }
-    } else {
+    if (alertList.length === 0) {
       setFlagIconColor('green', tab);
+      return;
+    }
+    // To reduce noise, show a gray flag if the only signal is the not top
+    // site signal. This works because the top site signal is most useful when
+    // a website is also flagged for other reasons.
+    if (alertList.length === 1 &&
+        alertList.includes(alerts.ALERT_MESSAGES['notTopSite'])) {
+      setFlagIconColor('gray', tab);
+    } else {
+      chrome.browserAction.setBadgeText({
+        text: alertList.length.toString(),
+        tabId: tab.id,
+      });
+      setFlagIconColor('orange', tab);
     }
   }
 
