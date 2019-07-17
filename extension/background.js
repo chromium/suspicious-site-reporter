@@ -106,28 +106,40 @@ class Background {
   async getAlertBadge_(tab) {
     const alertList = await alerts.computeAlerts(tab.url);
     this.alerts = alertList;
-    if (alertList.length > 0) {
+
+    /**
+     * Sets the color of the flag icon.
+     * @param {!string} color The color to set the flag. Will be one of orange,
+     *     green, or gray.
+     * @param {!Tab} tab A Chrome Tab instance.
+     */
+    const setFlagIconColor = (color, tab) => {
+      chrome.browserAction.setIcon({
+        path: {
+          '16': `images/${color}flag16.png`,
+          '48': `images/${color}flag48.png`,
+          '128': `images/${color}flag128.png`,
+        },
+        tabId: tab.id,
+      });
+    };
+
+    if (alertList.length === 0) {
+      setFlagIconColor('green', tab);
+      return;
+    }
+    // To reduce noise, show a gray flag if the only signal is the not top
+    // site signal. This works because the top site signal is most useful when
+    // a website is also flagged for other reasons.
+    if (alertList.length === 1 &&
+        alertList.includes(alerts.ALERT_MESSAGES['notTopSite'])) {
+      setFlagIconColor('gray', tab);
+    } else {
       chrome.browserAction.setBadgeText({
         text: alertList.length.toString(),
         tabId: tab.id,
       });
-      chrome.browserAction.setIcon({
-        path: {
-          '16': 'images/orangeflag16.png',
-          '48': 'images/orangeflag48.png',
-          '128': 'images/orangeflag128.png',
-        },
-        tabId: tab.id,
-      });
-    } else {
-      chrome.browserAction.setIcon({
-        path: {
-          '16': 'images/greenflag16.png',
-          '48': 'images/greenflag48.png',
-          '128': 'images/greenflag128.png',
-        },
-        tabId: tab.id,
-      });
+      setFlagIconColor('orange', tab);
     }
   }
 
