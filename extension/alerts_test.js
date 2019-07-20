@@ -112,7 +112,7 @@ describe('alerts', () => {
 
       alerts.computeAlerts('http://many.many.subdomains.test').then((response) => {
         expect(response.length).toEqual(3);
-	expect(response).toContain(alerts.ALERT_MESSAGES['manySubdomains']);
+        expect(response).toContain(alerts.ALERT_MESSAGES['manySubdomains']);
       });
 
       alerts.computeAlerts('http://not-many.subdomains.co.uk').then((response) => {
