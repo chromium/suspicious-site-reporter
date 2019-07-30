@@ -65,10 +65,10 @@ const getIntArrayFromDataUrl = dataUrl => {
  * @return {!ReferrerChainEntry} A parsed ReferrerChainEntry.
  */
 const parseReferrerEntry = entry => {
-  const parsedEntry = new ReferrerChainEntry();
-  parsedEntry.setUrl(entry.url);
-  parsedEntry.setMainFrameUrl(entry.mainFrameUrl);
-  parsedEntry.setType(ReferrerChainEntry.URLType[entry.urlType]);
+  const parsedEntry = new ReferrerChainEntry()
+                          .setUrl(entry.url)
+                          .setMainFrameUrl(entry.mainFrameUrl)
+                          .setType(ReferrerChainEntry.URLType[entry.urlType]);
   if (entry.ipAddresses) {
     entry.ipAddresses.forEach((ipAddress) => {
       parsedEntry.addIpAddresses(ipAddress);
@@ -80,8 +80,8 @@ const parseReferrerEntry = entry => {
   parsedEntry.setNavigationTimeMsec(entry.navigationTimeMs);
   if (entry.serverRedirectChain) {
     entry.serverRedirectChain.forEach((serverRedirect) => {
-      const redirect = new ReferrerChainEntry.ServerRedirect();
-      redirect.setUrl(serverRedirect.url);
+      const redirect =
+          new ReferrerChainEntry.ServerRedirect().setUrl(serverRedirect.url);
       parsedEntry.addServerRedirectChain(redirect);
     });
   }
@@ -174,8 +174,7 @@ class Background {
    */
   onMessageReceived_(request, sender, sendResponse) {
     if (request['report']) {
-      let report = new ClientRequest();
-      report.setUrl(String(request['url']));
+      let report = new ClientRequest().setUrl(String(request['url']));
       if (request['screenshotUrl']) {
         report.setScreenshot(
             getIntArrayFromDataUrl(String(request['screenshotUrl'])));
