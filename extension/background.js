@@ -133,7 +133,6 @@ class Background {
     // a website is also flagged for other reasons.
     if (alertList.length === 1 &&
         alertList.includes(alerts.ALERT_MESSAGES['notTopSite'])) {
-      console.log('gray');
       setFlagIconColor('gray', tab);
     } else {
       chrome.browserAction.setBadgeText({
