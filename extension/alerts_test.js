@@ -99,6 +99,23 @@ describe('alerts', () => {
     });
   });
 
+  describe('manySubdomains', () => {
+    it('should return true when site has unusally many subdomains', () => {
+      expect(alerts.hasManySubdomains('http://many.many.many.subdomains.co.uk'))
+          .toEqual(true);
+      expect(alerts.hasManySubdomains('http://many.many.many.subdomains.com'))
+          .toEqual(true);
+    });
+
+    it('should return false when site does not have unusally many subdomains',
+       () => {
+         expect(alerts.hasManySubdomains('http://not-many.subdomains.co.uk'))
+             .toEqual(false);
+         expect(alerts.hasManySubdomains('http://not-many.subdomains.com'))
+             .toEqual(false);
+       });
+  });
+
   describe('computeAlerts', () => {
     it('should return the correct list of alerts', async (done) => {
       alerts.computeAlerts('http://visitedyesterday.test').then((response) => {
@@ -108,16 +125,6 @@ describe('alerts', () => {
       alerts.computeAlerts('http://visitedtoday.test').then((response) => {
         expect(response.length).toEqual(2);
         expect(response).toContain(alerts.ALERT_MESSAGES['notVisitedBefore']);
-      });
-
-      alerts.computeAlerts('http://many.many.subdomains.test').then((response) => {
-        expect(response.length).toEqual(3);
-        expect(response).toContain(alerts.ALERT_MESSAGES['manySubdomains']);
-      });
-
-      alerts.computeAlerts('http://not-many.subdomains.co.uk').then((response) => {
-        expect(response.length).toEqual(3);
-        expect(response).not.toContain(alerts.ALERT_MESSAGES['manySubdomains']);
       });
 
       done();

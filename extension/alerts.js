@@ -167,6 +167,7 @@ const computeAlerts = async (url) => {
 exports = {
   ALERT_MESSAGES,
   computeAlerts,
+  hasManySubdomains,
   isIDN,
   setTopSitesList,
   visitedBeforeToday,
