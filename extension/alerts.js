@@ -26,10 +26,17 @@ const ALERT_MESSAGES = {
   'notTopSite': 'Site not in top 5k sites',
   'notVisitedBefore': 'Haven\'t visited site in the last 3 months',
   'manySubdomains': 'Unusually many subdomains',
+  'longSubdomains': 'Unusually long subdomains',
 };
 
 /** @const {number} If a domain has this many subdomains or more, it is flagged. */
 const NUM_SUSPICIOUS_SUBDOMAINS = 4;
+
+/**
+ * @const {number} If a domain has a subdomain with this many characters or
+ * more, it is flagged.
+ */
+const SUSPICIOUS_SUBDOMAIN_LENGTH = 22;
 
 /** {!Object<string, boolean>} Dictionary with top site domains as keys. */
 let topSitesList = {};
@@ -41,6 +48,16 @@ let topSitesList = {};
  */
 const getDomain = (url) => {
   return new URL(url).hostname;
+};
+
+/**
+ * Returns the domain split into parts and excluding the tld.
+ * @param {string} domain The domain of a page.
+ * @return {!Array<string>} The domain of the page.
+ */
+const getDomainPartsWithoutTld = (domain) => {
+  const suffix = '.' + Tld.getInstance().getTld(domain, true);
+  return domain.slice(0, domain.lastIndexOf(suffix)).split('.');
 };
 
 /**
@@ -64,8 +81,7 @@ const isIDN = (domain) => {
  */
 const isTopSite = (domain) => {
   const suffix = '.' + Tld.getInstance().getTld(domain, true);
-  const domainPartsWithoutTld =
-      domain.slice(0, domain.indexOf(suffix)).split('.');
+  const domainPartsWithoutTld = getDomainPartsWithoutTld(domain);
   const etldPlusOne =
       domainPartsWithoutTld[domainPartsWithoutTld.length - 1] + suffix;
   // The below assumes that the top sites list uses lower case only.
@@ -136,10 +152,19 @@ const visitedBeforeToday = (domain) => {
  * @return {boolean} True if the site has many subdomains.
 */
 const hasManySubdomains = (domain) => {
-  const suffix = '.' + Tld.getInstance().getTld(domain, true);
-  const domainPartsWithoutTld =
-      domain.slice(0, domain.indexOf(suffix)).split('.');
+  const domainPartsWithoutTld = getDomainPartsWithoutTld(domain);
   return domainPartsWithoutTld.length >= NUM_SUSPICIOUS_SUBDOMAINS;
+};
+
+/**
+ * Determines whether the site has unusually long subdomains.
+ * @param {string} domain The domain of the page.
+ * @return {boolean} True if the site has long subdomains.
+ */
+const hasLongSubdomains = (domain) => {
+  const domainPartsWithoutTld = getDomainPartsWithoutTld(domain);
+  return domainPartsWithoutTld.some(
+      (subdomain) => subdomain.length >= SUSPICIOUS_SUBDOMAIN_LENGTH);
 };
 
 /**
@@ -151,14 +176,17 @@ const computeAlerts = async (url) => {
   const newAlerts = [];
   const domain = getDomain(url).toLowerCase();
   const visited = await visitedBeforeToday(domain);
-  const manySubdomains = hasManySubdomains(domain);
   // Only warn about IDNs when not on a top site.
   if (!isTopSite(domain)) {
     newAlerts.push(ALERT_MESSAGES['notTopSite']);
     if (isIDN(domain)) newAlerts.push(ALERT_MESSAGES['isIDN']);
   }
   if (!visited) newAlerts.push(ALERT_MESSAGES['notVisitedBefore']);
-  if (manySubdomains) newAlerts.push(ALERT_MESSAGES['manySubdomains']);
+  if (hasManySubdomains(domain))
+    newAlerts.push(ALERT_MESSAGES['manySubdomains']);
+  if (hasLongSubdomains(domain))
+    newAlerts.push(ALERT_MESSAGES['longSubdomains']);
+
   return new Promise((resolve) => {
     resolve(newAlerts);
   });
@@ -168,6 +196,7 @@ exports = {
   ALERT_MESSAGES,
   computeAlerts,
   hasManySubdomains,
+  hasLongSubdomains,
   isIDN,
   setTopSitesList,
   visitedBeforeToday,

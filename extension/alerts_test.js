@@ -99,19 +99,35 @@ describe('alerts', () => {
     });
   });
 
-  describe('manySubdomains', () => {
-    it('should return true when site has unusally many subdomains', () => {
-      expect(alerts.hasManySubdomains('http://many.many.many.subdomains.co.uk'))
+  describe('hasLongSubdomains', () => {
+    it('should return true when site has unusually long subdomains', () => {
+      expect(alerts.hasLongSubdomains('very-very-long-subdomain.example.co.uk'))
           .toEqual(true);
-      expect(alerts.hasManySubdomains('http://many.many.many.subdomains.com'))
+      expect(alerts.hasLongSubdomains(
+                 'very.com.very-very-long-subdomain.example.com'))
           .toEqual(true);
     });
 
-    it('should return false when site does not have unusally many subdomains',
+    it('should return false when site does not have unusually long subdomains',
        () => {
-         expect(alerts.hasManySubdomains('http://not-many.subdomains.co.uk'))
+         expect(alerts.hasLongSubdomains('short-subdomain.example.co.uk'))
              .toEqual(false);
-         expect(alerts.hasManySubdomains('http://not-many.subdomains.com'))
+       });
+  });
+
+  describe('hasManySubdomains', () => {
+    it('should return true when site has unusually many subdomains', () => {
+      expect(alerts.hasManySubdomains('many.many.many.subdomains.co.uk'))
+          .toEqual(true);
+      expect(alerts.hasManySubdomains('many.many.many.subdomains.com'))
+          .toEqual(true);
+    });
+
+    it('should return false when site does not have unusually many subdomains',
+       () => {
+         expect(alerts.hasManySubdomains('not-many.subdomains.co.uk'))
+             .toEqual(false);
+         expect(alerts.hasManySubdomains('not-many.subdomains.com'))
              .toEqual(false);
        });
   });
