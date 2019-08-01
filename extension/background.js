@@ -125,6 +125,10 @@ class Background {
     };
 
     if (alertList.length === 0) {
+      chrome.browserAction.setBadgeText({
+        text: '',
+        tabId: tab.id,
+      });
       setFlagIconColor('green', tab);
       return;
     }
@@ -133,6 +137,10 @@ class Background {
     // a website is also flagged for other reasons.
     if (alertList.length === 1 &&
         alertList.includes(alerts.ALERT_MESSAGES['notTopSite'])) {
+      chrome.browserAction.setBadgeText({
+        text: '',
+        tabId: tab.id,
+      });
       setFlagIconColor('gray', tab);
     } else {
       chrome.browserAction.setBadgeText({
