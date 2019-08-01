@@ -24,10 +24,6 @@ type git >/dev/null 2>&1 || {
   echo >&2 "Git is required to build Suspicious Site Reporter dependencies."
   exit 1
 }
-type wget >/dev/null 2>&1 || {
-  echo >&2 "Wget is required to build Suspicious Site Reporter dependencies."
-  exit 1
-}
 
 if [ ! -d lib ]; then
   mkdir lib
@@ -51,7 +47,7 @@ fi
 if [ -d closure-compiler ]; then
   cd closure-compiler
   mkdir target; cd target
-  wget https://dl.google.com/closure-compiler/compiler-20190528.zip
+  curl https://dl.google.com/closure-compiler/compiler-20190528.zip -O
   unzip compiler-20190528.zip
   rm compiler-20190528.zip
   cd ../..
