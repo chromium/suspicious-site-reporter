@@ -216,14 +216,14 @@ class Background {
      * @param {!Tab} tab A Chrome Tab instance.
      */
     const setBrowserActionAndIcon = (tab) => {
-      if (!tab.url.startsWith('http')) {
+      if (!tab.url || !tab.url.startsWith('http')) {
         chrome.browserAction.disable(tab.id);
       } else {
         chrome.browserAction.enable(tab.id);
         this.getAlertBadge_(tab);
       }
     };
-    chrome.tabs.query({}, (tabs) => {
+    chrome.tabs.query({active:true}, (tabs) => {
       tabs.forEach((tab) => {
         setBrowserActionAndIcon(tab);
       });
@@ -234,7 +234,9 @@ class Background {
       });
     });
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      setBrowserActionAndIcon(tab);
+      if (changeInfo.url && tab.active) {
+        setBrowserActionAndIcon(tab);
+      }
     });
   }
 }
