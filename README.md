@@ -1,13 +1,13 @@
 # Suspicious Site Reporter
 
-Made by Google Chrome extension.
+A Chrome extension Made by Google.
 
-Suspicious Site Reporter is available [at the webstore](https://chrome.google.com/webstore/detail/suspicious-site-reporter/jknemblkbdhdcpllfgbfekkdciegfboi).
+Suspicious Site Reporter is available [from the webstore](https://chrome.google.com/webstore/detail/suspicious-site-reporter/jknemblkbdhdcpllfgbfekkdciegfboi).
 
 With the Suspicious Site Reporter extension, you’ll see an icon when you’re on a
 potentially suspicious site, and more information about why the site is
-suspicious. Click the icon to report unsafe sites to Google Safe Browsing for
-further evaluation.
+potentially suspicious. Click the icon to report unsafe sites to Google Safe
+Browsing for further evaluation.
 
 ## Building
 
@@ -22,5 +22,5 @@ following from the `extension/` directory:
 
 You may then load the unpacked extension from `extension/build/extension`.
 
-Note that if extension is built from here instead of using the version on the
+Note that if the extension is built from here instead of using the version on the
 webstore, the private referrer chain API will be unavailable.

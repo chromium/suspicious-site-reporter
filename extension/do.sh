@@ -106,15 +106,15 @@ ssr_install_deps() {
   mkdir protoc; cd protoc
   OS="$1"
   if [ ! $OS == "win" ]; then
-    wget https://github.com/google/protobuf/releases/download/v3.8.0/protoc-3.8.0-$OS-x86_64.zip
+    curl https://github.com/google/protobuf/releases/download/v3.8.0/protoc-3.8.0-$OS-x86_64.zip -O -L
     unzip protoc-3.8.0-$OS-x86_64.zip
     rm protoc-3.8.0-$OS-x86_64.zip
   else
-    wget https://github.com/google/protobuf/releases/download/v3.8.0/protoc-3.8.0-win64.zip
+    curl https://github.com/google/protobuf/releases/download/v3.8.0/protoc-3.8.0-win64.zip -O -L
     unzip protoc-3.8.0-win64.zip
     rm protoc-3.8.0-win64.zip
   fi
-  wget https://github.com/google/protobuf/releases/download/v3.8.0/protobuf-js-3.8.0.zip
+  curl https://github.com/google/protobuf/releases/download/v3.8.0/protobuf-js-3.8.0.zip -O -L
   unzip protobuf-js-3.8.0.zip
   rm protobuf-js-3.8.0.zip
   cd ../..
