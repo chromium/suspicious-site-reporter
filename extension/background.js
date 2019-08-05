@@ -37,10 +37,11 @@ const API_URL = goog.define('API_URL', 'https://test-safebrowsing.google.com');
  * @return {!Uint8Array} A Uin8Array representation of the image.
  */
 const getIntArrayFromDataUrl = dataUrl => {
+  const urlParts = dataUrl.split(',');
   // Separate out the mime component, which comes after the data: prefix and
   // before ;base64. e.g., image/png for screenshot data.
   const mimeString =
-      dataUrl.split(',')[0].split(':')[1].split(';')[0];
+      urlParts[0].split(':')[1].split(';')[0];
   // Since the data URL is retrieved from chrome.tabs.captureVisibleTab with
   // the format set to png, verify that the mimeString matches.
   if (mimeString !== 'image/png') {
@@ -48,7 +49,7 @@ const getIntArrayFromDataUrl = dataUrl => {
   }
   // Convert base 64 to raw binary data held in a string. The data segment
   // comes after the comma in a data URL.
-  const byteString = atob(dataUrl.split(',')[1]);
+  const byteString = atob(urlParts[1]);
   // Write the bytes of the string to an ArrayBuffer.
   const intArray =
       new Uint8Array(new ArrayBuffer(byteString.length));
