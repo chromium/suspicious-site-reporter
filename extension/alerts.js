@@ -23,10 +23,10 @@ const Tld = goog.require('publicsuffix.Tld');
 /** @const {!Object<string, string>} Map of signals to messages for the UI. */
 const ALERT_MESSAGES = {
   'isIDN': 'Domain uses uncommon characters',
+  'longSubdomains': 'Unusually long subdomains',
   'notTopSite': 'Site not in top 5k sites',
   'notVisitedBefore': 'Haven\'t visited site in the last 3 months',
   'manySubdomains': 'Unusually many subdomains',
-  'longSubdomains': 'Unusually long subdomains',
 };
 
 /** @const {number} If a domain has this many subdomains or more, it is flagged. */
@@ -168,11 +168,53 @@ const hasLongSubdomains = (domain) => {
 };
 
 /**
+ * Fetch redirect URLs from a referrer chain.
+ * @param {string} url The URL of the current tab.
+ * @param {number} tabId The ID of the tab for which to fetch the redirect URLs.
+ * @return {!Promise<!Set<string>>} A list of URLs redirected through before
+ *     landing on the current site.
+ */
+const fetchRedirectUrls = (url, tabId) => {
+  const redirectUrls = new Set();
+  if (chrome.safeBrowsingPrivate &&
+      chrome.safeBrowsingPrivate.getReferrerChain) {
+    return new Promise((resolve, reject) => {
+      chrome.safeBrowsingPrivate.getReferrerChain(tabId, (referrer) => {
+        for (const referrerEntry of referrer) {
+          // The referrer chain is returned in order of recency, so after seeing
+          // the first referrer chain entry that no longer contains a client
+          // redirect, break out of the loop since subsequent entries likely
+          // came from a user interaction, e.g. typing URL into the URL bar or
+          // clicking a link, and were not part of the relevant stream of
+          // redirects.
+          if (referrerEntry.urlType !== 'CLIENT_REDIRECT') break;
+          if (referrerEntry.referrerUrl) {
+            // Since the current URL is visible in the URL bar, it is less
+            // relevant when checking for suspicious redirects.
+            if (referrerEntry.referrerUrl !== url)
+              redirectUrls.add(referrerEntry.referrerUrl);
+          }
+          if (referrerEntry.serverRedirectChain) {
+            referrerEntry.serverRedirectChain.forEach((serverRedirect) => {
+              if (serverRedirect.url !== url)
+                redirectUrls.add(serverRedirect.url);
+            });
+          }
+        }
+        resolve(redirectUrls);
+      });
+    });
+  }
+  return Promise.resolve(redirectUrls);
+};
+
+/**
  * Compute alerts and populate alerts array.
  * @param {string} url The URL of the page.
+ * @param {number} tabId The ID of the current tab.
  * @return {!Promise<!Array<string>>} List of alerts for page.
  */
-const computeAlerts = async (url) => {
+const computeAlerts = async (url, tabId) => {
   const newAlerts = [];
   const domain = getDomain(url).toLowerCase();
   const visited = await visitedBeforeToday(domain);
@@ -195,6 +237,7 @@ const computeAlerts = async (url) => {
 exports = {
   ALERT_MESSAGES,
   computeAlerts,
+  fetchRedirectUrls,
   hasManySubdomains,
   hasLongSubdomains,
   isIDN,

@@ -271,9 +271,10 @@ class Popup {
   /**
    * Populates alert list.
    * @param {string} url The URL of the current tab.
+   * @param {number} tabId The ID of the current tab.
    * @private
    */
-  populateAlerts_(url) {
+  populateAlerts_(url, tabId) {
     let port = chrome.extension.connect({name: 'Site info'});
     port.postMessage({siteInfo: true});
     port.onMessage.addListener(async (message) => {
@@ -282,7 +283,7 @@ class Popup {
       // background page, recompute the alert list now.
       if (!fetchedAlerts) {
         alerts.setTopSitesList();
-        const computedAlerts = await alerts.computeAlerts(url);
+        const computedAlerts = await alerts.computeAlerts(url, tabId);
         fetchedAlerts = computedAlerts;
       }
       if (!fetchedAlerts || fetchedAlerts.length === 0) {
@@ -343,7 +344,7 @@ class Popup {
     const popup = this;
     chrome.tabs.query({'active': true, 'currentWindow': true}, (tabs) => {
       const currentTab = tabs[0];
-      popup.populateAlerts_(currentTab.url);
+      popup.populateAlerts_(currentTab.url, currentTab.id);
       urlPreview.textContent = removeUserInfo(currentTab.url);
       if (isMultiline(urlPreview)) urlPreview.classList.add('multiline');
       popup.generateScreenshotPreview_(currentTab);
