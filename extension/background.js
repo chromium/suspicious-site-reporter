@@ -95,8 +95,9 @@ const parseReferrerEntry = entry => {
 
 class Background {
   constructor() {
-    /** {?Array<string>} A list of suspicious signals on a site.  */
-    this.alerts = undefined;
+    /** {?Object<string, array<string>} A single-entry cache of the most
+     * recent suspicious site signals calculation. */
+    this.cacheEntry = undefined;
   }
 
   /**
@@ -106,7 +107,7 @@ class Background {
    */
   async getAlertBadge_(tab) {
     const alertList = await alerts.computeAlerts(tab.url);
-    this.alerts = alertList;
+    this.cacheEntry = {"url": tab.url, "alerts": alertList};
 
     /**
      * Sets the color of the flag icon.
@@ -181,7 +182,17 @@ class Background {
    * @param {!Function} sendResponse function.
    * @private
    */
-  onMessageReceived_(request, sender, sendResponse) {
+  async onMessageReceived_(request, sender, sendResponse) {
+    if (request['alertsForUrl']) {
+      let siteAlerts = (this.cacheEntry) ? this.cacheEntry.alerts : null;
+        if (!siteAlerts || (request['alertsForUrl'] !== this.cacheEntry.url)) {
+          // Cache miss. Recompute the alerts.
+          siteAlerts = await alerts.computeAlerts(request['alertsForUrl']);
+        }
+        sendResponse({siteInfo: siteAlerts});
+      return;
+    }
+
     if (request['report']) {
       let report = new ClientRequest().setUrl(String(request['url']));
       if (request['screenshotUrl']) {
@@ -207,15 +218,9 @@ class Background {
    * Initializes the extension background page.
    */
   init() {
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       const requestReceived = /** @type {!Object<string, *>} */ (request);
       this.onMessageReceived_(requestReceived, sender, sendResponse);
-    });
-
-    chrome.extension.onConnect.addListener((port) => {
-      port.onMessage.addListener((message) => {
-        port.postMessage({siteInfo: this.alerts});
-      });
     });
 
     alerts.setTopSitesList();

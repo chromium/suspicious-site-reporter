@@ -1,6 +1,6 @@
 {
     "name": "Suspicious Site Reporter",
-    "version": "1.18",
+    "version": "1.20",
     "description": "Extension for reporting suspicious sites to Safe Browsing.",
     "permissions": [
         "https://safebrowsing.google.com/*",
@@ -10,8 +10,7 @@
         "tabs"
     ],
     "background": {
-        "scripts": ["alerts_bin.js", "background_bin.js"],
-        "persistent": false
+        "scripts": ["alerts_bin.js", "background_bin.js"]
     },
     "browser_action": {
 	"default_popup": "popup.html",
