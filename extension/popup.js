@@ -278,17 +278,19 @@ class Popup {
     port.postMessage({siteInfo: true});
     port.onMessage.addListener(async (message) => {
       let fetchedAlerts = message.siteInfo;
-      let element = document.createElement('li');
-      element.textContent = fetchedAlerts ?
-          'Nothing detected' :
-          'Error fetching signals. Refresh page to view.';
-      element.classList.add('site-info-alert', 'no-alerts');
+      // If we failed to obtain a cached list of alerts from the
+      // background page, recompute the alert list now.
       if (!fetchedAlerts) {
         alerts.setTopSitesList();
         const computedAlerts = await alerts.computeAlerts(url);
         fetchedAlerts = computedAlerts;
       }
       if (!fetchedAlerts || fetchedAlerts.length === 0) {
+        let element = document.createElement('li');
+        element.textContent = fetchedAlerts ?
+            'Nothing detected' :
+            'Error fetching signals. Refresh page to view.';
+        element.classList.add('site-info-alert', 'no-alerts');
         document.getElementById('site-info').appendChild(element);
         return;
       }
