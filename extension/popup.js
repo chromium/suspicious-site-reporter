@@ -274,9 +274,17 @@ class Popup {
    * @private
    */
   populateAlerts_(url) {
-    // Get the alert list from the background tab.
-    chrome.runtime.sendMessage({'alertsForUrl': url}, (response) => {
-      let fetchedAlerts = response.siteInfo;
+    let port = chrome.extension.connect({name: 'Site info'});
+    port.postMessage({siteInfo: true});
+    port.onMessage.addListener(async (message) => {
+      let fetchedAlerts = message.siteInfo;
+      // If we failed to obtain a cached list of alerts from the
+      // background page, recompute the alert list now.
+      if (!fetchedAlerts) {
+        alerts.setTopSitesList();
+        const computedAlerts = await alerts.computeAlerts(url);
+        fetchedAlerts = computedAlerts;
+      }
       if (!fetchedAlerts || fetchedAlerts.length === 0) {
         let element = document.createElement('li');
         element.textContent = fetchedAlerts ?
