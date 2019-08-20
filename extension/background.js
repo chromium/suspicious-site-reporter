@@ -105,7 +105,7 @@ class Background {
    * @private
    */
   async getAlertBadge_(tab) {
-    const alertList = await alerts.computeAlerts(tab.url);
+    const alertList = await alerts.computeAlerts(tab.url, tab.id);
     this.alerts = alertList;
 
     /**
