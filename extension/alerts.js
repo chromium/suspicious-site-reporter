@@ -27,6 +27,7 @@ const ALERT_MESSAGES = {
   'notTopSite': 'Site not in top 5k sites',
   'notVisitedBefore': 'Haven\'t visited site in the last 3 months',
   'manySubdomains': 'Unusually many subdomains',
+  'urlShortenerRedirects': 'Has multiple redirects through URL shorteners',
 };
 
 /** @const {number} If a domain has this many subdomains or more, it is flagged. */
@@ -168,6 +169,43 @@ const hasLongSubdomains = (domain) => {
 };
 
 /**
+ * Determines whether the site has multiple redirects through URL shorteners.
+ * @param {!Set<string>} redirectUrls A list of unique URLs redirected through
+ *     before landing on the current site.
+ * @return {boolean} Whether the redirect chain has multiple redirects
+ *     through URL shorteners.
+ */
+const hasMultipleUrlShortenerRedirects = (redirectUrls) => {
+  // List of some popular URL shorteners obtained from combining some public
+  // lists. Limitation is that it is unable to cover custom branded links.
+  const urlShorteners = new Set([
+    'bc.vc',
+    'bit.do',
+    'bit.ly',
+    'goo.gl',
+    'is.gd',
+    'ity.im',
+    'lc.chat',
+    'ow.ly',
+    's2r.co',
+    'soo.gd',
+    'tinyurl.com',
+    'tiny.cc',
+  ]);
+  let urlShortenerRedirects = 0;
+  redirectUrls.forEach((url) => {
+    if (urlShorteners.has(getDomain(url))) {
+      // Only increase the redirect count if it was not an HTTPS upgrade.
+      if (!(url.startsWith('https://') &&
+            redirectUrls.has(url.replace('https', 'http')))) {
+        urlShortenerRedirects += 1;
+      }
+    }
+  });
+  return urlShortenerRedirects > 1;
+};
+
+/**
  * Fetch redirect URLs from a referrer chain.
  * @param {string} url The URL of the current tab.
  * @param {number} tabId The ID of the tab for which to fetch the redirect URLs.
@@ -218,6 +256,7 @@ const computeAlerts = async (url, tabId) => {
   const newAlerts = [];
   const domain = getDomain(url).toLowerCase();
   const visited = await visitedBeforeToday(domain);
+  const redirectUrls = await fetchRedirectUrls(domain, tabId);
   // Only warn about IDNs when not on a top site.
   if (!isTopSite(domain)) {
     newAlerts.push(ALERT_MESSAGES['notTopSite']);
@@ -228,10 +267,9 @@ const computeAlerts = async (url, tabId) => {
     newAlerts.push(ALERT_MESSAGES['manySubdomains']);
   if (hasLongSubdomains(domain))
     newAlerts.push(ALERT_MESSAGES['longSubdomains']);
-
-  return new Promise((resolve) => {
-    resolve(newAlerts);
-  });
+  if (hasMultipleUrlShortenerRedirects(redirectUrls))
+    newAlerts.push(ALERT_MESSAGES['urlShortenerRedirects']);
+  return Promise.resolve(newAlerts);
 };
 
 exports = {
@@ -239,6 +277,7 @@ exports = {
   computeAlerts,
   fetchRedirectUrls,
   hasManySubdomains,
+  hasMultipleUrlShortenerRedirects,
   hasLongSubdomains,
   isIDN,
   setTopSitesList,
