@@ -136,6 +136,28 @@ describe('alerts', () => {
        });
   });
 
+  describe('hasMultipleUrlShortenerRedirects', () => {
+    it('should return true when the site has more than one redirect through a URL shortener',
+       () => {
+         const redirectUrls = new Set([
+           'http://goo.gl/test', 'https://goo.gl/test',
+           'https://goo.gl/redirect-test'
+         ]);
+         expect(alerts.hasMultipleUrlShortenerRedirects(redirectUrls))
+             .toEqual(true);
+       });
+
+    it('should return false when the site has one redirect through a URL shortener',
+       () => {
+         const redirectUrls = new Set([
+           'http://goo.gl/test', 'https://goo.gl/test',
+           'https://redirect-test.com'
+         ]);
+         expect(alerts.hasMultipleUrlShortenerRedirects(redirectUrls))
+             .toEqual(false);
+       });
+  });
+
   describe('fetchRedirectUrls', () => {
     it('should return client and server redirect URLs from the referrer',
        (done) => {
