@@ -27,6 +27,8 @@ const ALERT_MESSAGES = {
   'notTopSite': 'Site not in top 5k sites',
   'notVisitedBefore': 'Haven\'t visited site in the last 3 months',
   'manySubdomains': 'Unusually many subdomains',
+  'redirectsThroughSuspiciousTld':
+      'Site redirected through a TLD potentially associated with abuse',
   'urlShortenerRedirects': 'Has multiple redirects through URL shorteners',
 };
 
@@ -57,7 +59,7 @@ const getDomain = (url) => {
  * @return {!Array<string>} The domain of the page.
  */
 const getDomainPartsWithoutTld = (domain) => {
-  const suffix = '.' + Tld.getInstance().getTld(domain, true);
+  const suffix = '.' + Tld.getInstance().getTld(domain, /* icannOnly= */ false);
   return domain.slice(0, domain.lastIndexOf(suffix)).split('.');
 };
 
@@ -81,7 +83,7 @@ const isIDN = (domain) => {
  * @return {boolean} Whether the site is in the top 5k.
  */
 const isTopSite = (domain) => {
-  const suffix = '.' + Tld.getInstance().getTld(domain, true);
+  const suffix = '.' + Tld.getInstance().getTld(domain, /* icannOnly= */ false);
   const domainPartsWithoutTld = getDomainPartsWithoutTld(domain);
   const etldPlusOne =
       domainPartsWithoutTld[domainPartsWithoutTld.length - 1] + suffix;
@@ -171,7 +173,7 @@ const hasLongSubdomains = (domain) => {
 /**
  * Determines whether the site has multiple redirects through URL shorteners.
  * @param {!Set<string>} redirectUrls A list of unique URLs redirected through
- *     before landing on the current site.
+ *     to land on the current site.
  * @return {boolean} Whether the redirect chain has multiple redirects
  *     through URL shorteners.
  */
@@ -206,11 +208,35 @@ const hasMultipleUrlShortenerRedirects = (redirectUrls) => {
 };
 
 /**
+ * Determines whether the site redirects through a suspicious TLD.
+ * @param {!Set<string>} redirectUrls A list of unique URLs redirected through
+ *     to land on the current site.
+ * @return {boolean} Whether the redirect chain includes URLs with a suspicious
+ *     TLD.
+ */
+const redirectsThroughSuspiciousTld = (redirectUrls) => {
+  // List of TLDs that have a high percentage of spammy or malicious domain
+  // registrations.
+  const suspiciousTlds = new Set([
+    '.accountant', '.bid',    '.click',  '.cricket', '.date',  '.download',
+    '.faith',      '.gdn',    '.kim',    '.loan',    '.men',   '.party',
+    '.pro',        '.racing', '.review', '.science', '.space', '.stream',
+    '.top',        '.trade',  '.win',    '.work',    '.xyz',
+  ]);
+  for (const url of redirectUrls) {
+    const tld =
+        '.' + Tld.getInstance().getTld(getDomain(url), /* icannOnly= */ false);
+    if (suspiciousTlds.has(tld)) return true;
+  }
+  return false;
+};
+
+/**
  * Fetch redirect URLs from a referrer chain.
  * @param {string} url The URL of the current tab.
  * @param {number} tabId The ID of the tab for which to fetch the redirect URLs.
- * @return {!Promise<!Set<string>>} A list of URLs redirected through before
- *     landing on the current site.
+ * @return {!Promise<!Set<string>>} A list of URLs redirected through to land
+ *     on the current site, including the final page URL.
  */
 const fetchRedirectUrls = (url, tabId) => {
   const redirectUrls = new Set();
@@ -227,15 +253,11 @@ const fetchRedirectUrls = (url, tabId) => {
           // redirects.
           if (referrerEntry.urlType !== 'CLIENT_REDIRECT') break;
           if (referrerEntry.referrerUrl) {
-            // Since the current URL is visible in the URL bar, it is less
-            // relevant when checking for suspicious redirects.
-            if (referrerEntry.referrerUrl !== url)
-              redirectUrls.add(referrerEntry.referrerUrl);
+            redirectUrls.add(referrerEntry.referrerUrl);
           }
           if (referrerEntry.serverRedirectChain) {
             referrerEntry.serverRedirectChain.forEach((serverRedirect) => {
-              if (serverRedirect.url !== url)
-                redirectUrls.add(serverRedirect.url);
+              redirectUrls.add(serverRedirect.url);
             });
           }
         }
@@ -269,6 +291,8 @@ const computeAlerts = async (url, tabId) => {
     newAlerts.push(ALERT_MESSAGES['longSubdomains']);
   if (hasMultipleUrlShortenerRedirects(redirectUrls))
     newAlerts.push(ALERT_MESSAGES['urlShortenerRedirects']);
+  if (redirectsThroughSuspiciousTld(redirectUrls))
+    newAlerts.push(ALERT_MESSAGES['redirectsThroughSuspiciousTld']);
   return Promise.resolve(newAlerts);
 };
 
@@ -280,6 +304,7 @@ exports = {
   hasMultipleUrlShortenerRedirects,
   hasLongSubdomains,
   isIDN,
+  redirectsThroughSuspiciousTld,
   setTopSitesList,
   visitedBeforeToday,
 };

@@ -158,6 +158,20 @@ describe('alerts', () => {
        });
   });
 
+  describe('redirectsThroughSuspiciousTld', () => {
+    it('should return true when redirects through a suspicious TLD', () => {
+      const redirectUrls = new Set(['https://test.stream', 'https://test.com']);
+      expect(alerts.redirectsThroughSuspiciousTld(redirectUrls)).toEqual(true);
+    });
+
+    it('should return false when the site does not redirect through a suspicious TLD',
+       () => {
+         const redirectUrls = new Set(['http://test.com', 'https://test.com']);
+         expect(alerts.redirectsThroughSuspiciousTld(redirectUrls))
+             .toEqual(false);
+       });
+  });
+
   describe('fetchRedirectUrls', () => {
     it('should return client and server redirect URLs from the referrer',
        (done) => {
@@ -183,9 +197,9 @@ describe('alerts', () => {
 
          alerts.fetchRedirectUrls('redirect-test.com', /* tabId= */ 123)
              .then((response) => {
-               expect(response.size).toEqual(2);
-               expect(response).toEqual(
-                   new Set(['test.com', 'url-shortener.test']));
+               expect(response.size).toEqual(3);
+               expect(response).toEqual(new Set(
+                   ['test.com', 'url-shortener.test', 'redirect-test.com']));
                done();
              });
        });
