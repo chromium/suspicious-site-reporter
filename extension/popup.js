@@ -278,7 +278,7 @@ class Popup {
     port.postMessage({siteInfo: true});
     port.onMessage.addListener(async (message) => {
       let fetchedAlerts = message.siteInfo;
-      // If we failed to obtain a cached list of alerts from the
+      // If popup fails to obtain a cached list of alerts from the
       // background page, recompute the alert list now.
       if (!fetchedAlerts) {
         alerts.setTopSitesList();
