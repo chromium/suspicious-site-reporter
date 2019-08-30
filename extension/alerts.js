@@ -23,10 +23,13 @@ const Tld = goog.require('publicsuffix.Tld');
 /** @const {!Object<string, string>} Map of signals to messages for the UI. */
 const ALERT_MESSAGES = {
   'isIDN': 'Domain uses uncommon characters',
+  'longSubdomains': 'Unusually long subdomains',
   'notTopSite': 'Site not in top 5k sites',
   'notVisitedBefore': 'Haven\'t visited site in the last 3 months',
   'manySubdomains': 'Unusually many subdomains',
-  'longSubdomains': 'Unusually long subdomains',
+  'redirectsThroughSuspiciousTld':
+      'Site redirected through a TLD potentially associated with abuse',
+  'urlShortenerRedirects': 'Has multiple redirects through URL shorteners',
 };
 
 /** @const {number} If a domain has this many subdomains or more, it is flagged. */
@@ -56,7 +59,7 @@ const getDomain = (url) => {
  * @return {!Array<string>} The domain of the page.
  */
 const getDomainPartsWithoutTld = (domain) => {
-  const suffix = '.' + Tld.getInstance().getTld(domain, true);
+  const suffix = '.' + Tld.getInstance().getTld(domain, /* icannOnly= */ false);
   return domain.slice(0, domain.lastIndexOf(suffix)).split('.');
 };
 
@@ -80,7 +83,7 @@ const isIDN = (domain) => {
  * @return {boolean} Whether the site is in the top 5k.
  */
 const isTopSite = (domain) => {
-  const suffix = '.' + Tld.getInstance().getTld(domain, true);
+  const suffix = '.' + Tld.getInstance().getTld(domain, /* icannOnly= */ false);
   const domainPartsWithoutTld = getDomainPartsWithoutTld(domain);
   const etldPlusOne =
       domainPartsWithoutTld[domainPartsWithoutTld.length - 1] + suffix;
@@ -168,14 +171,114 @@ const hasLongSubdomains = (domain) => {
 };
 
 /**
+ * Determines whether the site has multiple redirects through URL shorteners.
+ * @param {!Set<string>} redirectUrls A list of unique URLs redirected through
+ *     to land on the current site.
+ * @return {boolean} Whether the redirect chain has multiple redirects
+ *     through URL shorteners.
+ */
+const hasMultipleUrlShortenerRedirects = (redirectUrls) => {
+  // List of some popular URL shorteners obtained from combining some public
+  // lists. Limitation is that it is unable to cover custom branded links.
+  const urlShorteners = new Set([
+    'bc.vc',
+    'bit.do',
+    'bit.ly',
+    'goo.gl',
+    'is.gd',
+    'ity.im',
+    'lc.chat',
+    'ow.ly',
+    's2r.co',
+    'soo.gd',
+    'tinyurl.com',
+    'tiny.cc',
+  ]);
+  let urlShortenerRedirects = 0;
+  redirectUrls.forEach((url) => {
+    if (urlShorteners.has(getDomain(url))) {
+      // Only increase the redirect count if it was not an HTTPS upgrade.
+      if (!(url.startsWith('https://') &&
+            redirectUrls.has(url.replace('https', 'http')))) {
+        urlShortenerRedirects += 1;
+      }
+    }
+  });
+  return urlShortenerRedirects > 1;
+};
+
+/**
+ * Determines whether the site redirects through a suspicious TLD.
+ * @param {!Set<string>} redirectUrls A list of unique URLs redirected through
+ *     to land on the current site.
+ * @return {boolean} Whether the redirect chain includes URLs with a suspicious
+ *     TLD.
+ */
+const redirectsThroughSuspiciousTld = (redirectUrls) => {
+  // List of TLDs that have a high percentage of spammy or malicious domain
+  // registrations.
+  const suspiciousTlds = new Set([
+    '.accountant', '.bid',    '.click',  '.cricket', '.date',  '.download',
+    '.faith',      '.gdn',    '.kim',    '.loan',    '.men',   '.party',
+    '.pro',        '.racing', '.review', '.science', '.space', '.stream',
+    '.top',        '.trade',  '.win',    '.work',    '.xyz',
+  ]);
+  for (const url of redirectUrls) {
+    const tld =
+        '.' + Tld.getInstance().getTld(getDomain(url), /* icannOnly= */ false);
+    if (suspiciousTlds.has(tld)) return true;
+  }
+  return false;
+};
+
+/**
+ * Fetch redirect URLs from a referrer chain.
+ * @param {string} url The URL of the current tab.
+ * @param {number} tabId The ID of the tab for which to fetch the redirect URLs.
+ * @return {!Promise<!Set<string>>} A list of URLs redirected through to land
+ *     on the current site, including the final page URL.
+ */
+const fetchRedirectUrls = (url, tabId) => {
+  const redirectUrls = new Set();
+  if (chrome.safeBrowsingPrivate &&
+      chrome.safeBrowsingPrivate.getReferrerChain) {
+    return new Promise((resolve, reject) => {
+      chrome.safeBrowsingPrivate.getReferrerChain(tabId, (referrer) => {
+        for (const referrerEntry of referrer) {
+          // The referrer chain is returned in order of recency, so after seeing
+          // the first referrer chain entry that no longer contains a client
+          // redirect, break out of the loop since subsequent entries likely
+          // came from a user interaction, e.g. typing URL into the URL bar or
+          // clicking a link, and were not part of the relevant stream of
+          // redirects.
+          if (referrerEntry.urlType !== 'CLIENT_REDIRECT') break;
+          if (referrerEntry.referrerUrl) {
+            redirectUrls.add(referrerEntry.referrerUrl);
+          }
+          if (referrerEntry.serverRedirectChain) {
+            referrerEntry.serverRedirectChain.forEach((serverRedirect) => {
+              redirectUrls.add(serverRedirect.url);
+            });
+          }
+        }
+        resolve(redirectUrls);
+      });
+    });
+  }
+  return Promise.resolve(redirectUrls);
+};
+
+/**
  * Compute alerts and populate alerts array.
  * @param {string} url The URL of the page.
+ * @param {number} tabId The ID of the current tab.
  * @return {!Promise<!Array<string>>} List of alerts for page.
  */
-const computeAlerts = async (url) => {
+const computeAlerts = async (url, tabId) => {
   const newAlerts = [];
   const domain = getDomain(url).toLowerCase();
   const visited = await visitedBeforeToday(domain);
+  const redirectUrls = await fetchRedirectUrls(domain, tabId);
   // Only warn about IDNs when not on a top site.
   if (!isTopSite(domain)) {
     newAlerts.push(ALERT_MESSAGES['notTopSite']);
@@ -186,18 +289,22 @@ const computeAlerts = async (url) => {
     newAlerts.push(ALERT_MESSAGES['manySubdomains']);
   if (hasLongSubdomains(domain))
     newAlerts.push(ALERT_MESSAGES['longSubdomains']);
-
-  return new Promise((resolve) => {
-    resolve(newAlerts);
-  });
+  if (hasMultipleUrlShortenerRedirects(redirectUrls))
+    newAlerts.push(ALERT_MESSAGES['urlShortenerRedirects']);
+  if (redirectsThroughSuspiciousTld(redirectUrls))
+    newAlerts.push(ALERT_MESSAGES['redirectsThroughSuspiciousTld']);
+  return Promise.resolve(newAlerts);
 };
 
 exports = {
   ALERT_MESSAGES,
   computeAlerts,
+  fetchRedirectUrls,
   hasManySubdomains,
+  hasMultipleUrlShortenerRedirects,
   hasLongSubdomains,
   isIDN,
+  redirectsThroughSuspiciousTld,
   setTopSitesList,
   visitedBeforeToday,
 };
