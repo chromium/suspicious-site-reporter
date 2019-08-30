@@ -244,21 +244,24 @@ const fetchRedirectUrls = (url, tabId) => {
       chrome.safeBrowsingPrivate.getReferrerChain) {
     return new Promise((resolve, reject) => {
       chrome.safeBrowsingPrivate.getReferrerChain(tabId, (referrer) => {
-        for (const referrerEntry of referrer) {
-          // The referrer chain is returned in order of recency, so after seeing
-          // the first referrer chain entry that no longer contains a client
-          // redirect, break out of the loop since subsequent entries likely
-          // came from a user interaction, e.g. typing URL into the URL bar or
-          // clicking a link, and were not part of the relevant stream of
-          // redirects.
-          if (referrerEntry.urlType !== 'CLIENT_REDIRECT') break;
-          if (referrerEntry.referrerUrl) {
-            redirectUrls.add(referrerEntry.referrerUrl);
-          }
-          if (referrerEntry.serverRedirectChain) {
-            referrerEntry.serverRedirectChain.forEach((serverRedirect) => {
-              redirectUrls.add(serverRedirect.url);
-            });
+        // Microsoft Edge returns null for the referrer chain.
+        if (referrer) {
+          for (const referrerEntry of referrer) {
+            // The referrer chain is returned in order of recency, so after
+            // seeing the first referrer chain entry that no longer contains a
+            // client redirect, break out of the loop since subsequent entries
+            // likely came from a user interaction, e.g. typing URL into the
+            // URL bar or clicking a link, and were not part of the relevant
+            // stream of redirects.
+            if (referrerEntry.urlType !== 'CLIENT_REDIRECT') break;
+            if (referrerEntry.referrerUrl) {
+              redirectUrls.add(referrerEntry.referrerUrl);
+            }
+            if (referrerEntry.serverRedirectChain) {
+              referrerEntry.serverRedirectChain.forEach((serverRedirect) => {
+                redirectUrls.add(serverRedirect.url);
+              });
+            }
           }
         }
         resolve(redirectUrls);
