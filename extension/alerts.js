@@ -29,6 +29,8 @@ const ALERT_MESSAGES = {
   'manySubdomains': 'Unusually many subdomains',
   'redirectsThroughSuspiciousTld':
       'Site redirected through a TLD potentially associated with abuse',
+  'redirectsFromOutsideProgramOrWebmail':
+      'Visit maybe initiated from outside program or webmail',
   'urlShortenerRedirects': 'Has multiple redirects through URL shorteners',
 };
 
@@ -232,14 +234,77 @@ const redirectsThroughSuspiciousTld = (redirectUrls) => {
 };
 
 /**
- * Fetch redirect URLs from a referrer chain.
- * @param {string} url The URL of the current tab.
- * @param {number} tabId The ID of the tab for which to fetch the redirect URLs.
- * @return {!Promise<!Set<string>>} A list of URLs redirected through to land
+ * Determines if redirect chain initiated from outside program or webmail.
+ * @param {!Array<!chrome.safeBrowsingPrivate.ReferrerChainEntry>} redirectChain
+ *     The redirect chain starting from the latest user interaction.
+ * @return {boolean} Whether the redirect chain was initiated from an outside
+ *     program or webmail.
+ */
+const redirectsFromOutsideProgramOrWebmail = (redirectChain) => {
+  // Initial domain list--should be updated on a rolling basis.
+  const webmailDomains = [
+    'connect.xfinity.com',
+    'en.mail.qq.com',
+    'e.mail.ru',
+    'mail.aol.com',
+    'mail.google.com',
+    'mail.yahoo.com',
+    'outlook.office365.com',
+    'outlook.live.com',
+    'service.mail.com',
+  ];
+  // The last entry in the redirect chain should be the original referrer.
+  const initiatingEntry = redirectChain[redirectChain.length - 1];
+  if (initiatingEntry && initiatingEntry.referrerUrl) {
+    for (const webmailDomain of webmailDomains) {
+      // Don't just do an exact match because some webmail domains might
+      // include additional subdomains, e.g. mg.mail.yahoo.com.
+      if (getDomain(initiatingEntry.referrerUrl).endsWith(webmailDomain)) {
+        return true;
+      }
+    }
+  }
+  // When maybeLaunchedByExternalApp is true, this means that there's a
+  // possibility the entry was launched by an external application, but it might
+  // be a false positive. If false, the entry definitely was not launched
+  // by an external application.
+  if (initiatingEntry.maybeLaunchedByExternalApp) return true;
+  return false;
+};
+
+/**
+ * Returns the redirect URLs from a referrer chain.
+ * @param {!Array<!chrome.safeBrowsingPrivate.ReferrerChainEntry>} redirectChain
+ *     The redirect chain starting from the latest user interaction.
+ * @return {!Set<string>} A list of URLs redirected through to land
  *     on the current site, including the final page URL.
  */
-const fetchRedirectUrls = (url, tabId) => {
+const getRedirectUrls = (redirectChain) => {
   const redirectUrls = new Set();
+  for (const referrerEntry of redirectChain) {
+    if (referrerEntry.referrerUrl) {
+      redirectUrls.add(referrerEntry.referrerUrl);
+    }
+    if (referrerEntry.serverRedirectChain) {
+      referrerEntry.serverRedirectChain.forEach((serverRedirect) => {
+        redirectUrls.add(serverRedirect.url);
+      });
+    }
+  }
+  return redirectUrls;
+};
+
+
+/**
+ * Filters referrer entries to those resulting from the latest user interaction.
+ * @param {string} url The URL of the current tab.
+ * @param {number} tabId The ID of the tab for which to fetch the referrer.
+ * @return {!Promise<!Array<!chrome.safeBrowsingPrivate.ReferrerChainEntry>>}
+ *     The redirect chain, which is a list of referrer entries starting from
+ *     immediately after the latest user action.
+ */
+const fetchRedirectChain = (url, tabId) => {
+  const referrerEntries = [];
   if (chrome.safeBrowsingPrivate &&
       chrome.safeBrowsingPrivate.getReferrerChain) {
     return new Promise((resolve, reject) => {
@@ -254,21 +319,14 @@ const fetchRedirectUrls = (url, tabId) => {
             // URL bar or clicking a link, and were not part of the relevant
             // stream of redirects.
             if (referrerEntry.urlType !== 'CLIENT_REDIRECT') break;
-            if (referrerEntry.referrerUrl) {
-              redirectUrls.add(referrerEntry.referrerUrl);
-            }
-            if (referrerEntry.serverRedirectChain) {
-              referrerEntry.serverRedirectChain.forEach((serverRedirect) => {
-                redirectUrls.add(serverRedirect.url);
-              });
-            }
+            referrerEntries.push(referrerEntry);
           }
         }
-        resolve(redirectUrls);
+        resolve(referrerEntries);
       });
     });
   }
-  return Promise.resolve(redirectUrls);
+  return Promise.resolve(referrerEntries);
 };
 
 /**
@@ -281,11 +339,15 @@ const computeAlerts = async (url, tabId) => {
   const newAlerts = [];
   const domain = getDomain(url).toLowerCase();
   const visited = await visitedBeforeToday(domain);
-  const redirectUrls = await fetchRedirectUrls(domain, tabId);
-  // Only warn about IDNs when not on a top site.
+  const redirectChain = await fetchRedirectChain(domain, tabId);
+  const redirectUrls = getRedirectUrls(redirectChain);
+  // Only warn about IDNs and redirect chain initiated from outside program when
+  // the final URL is not on a top site.
   if (!isTopSite(domain)) {
     newAlerts.push(ALERT_MESSAGES['notTopSite']);
     if (isIDN(domain)) newAlerts.push(ALERT_MESSAGES['isIDN']);
+    if (redirectsFromOutsideProgramOrWebmail(redirectChain))
+      newAlerts.push(ALERT_MESSAGES['redirectsFromOutsideProgramOrWebmail']);
   }
   if (!visited) newAlerts.push(ALERT_MESSAGES['notVisitedBefore']);
   if (hasManySubdomains(domain))
@@ -302,11 +364,13 @@ const computeAlerts = async (url, tabId) => {
 exports = {
   ALERT_MESSAGES,
   computeAlerts,
-  fetchRedirectUrls,
+  fetchRedirectChain,
+  getRedirectUrls,
   hasManySubdomains,
   hasMultipleUrlShortenerRedirects,
   hasLongSubdomains,
   isIDN,
+  redirectsFromOutsideProgramOrWebmail,
   redirectsThroughSuspiciousTld,
   setTopSitesList,
   visitedBeforeToday,
