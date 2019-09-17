@@ -1,21 +1,21 @@
 {
-    "name": "Test Suspicious Site Reporter",
-    "version": "1.0",
-    "description": "Extension for reporting suspicious sites to Safe Browsing.",
-    "permissions": [
-        "https://test-safebrowsing.google.com/*",
-        "activeTab",
-        "history",
-        "safeBrowsingPrivate",
-        "tabs"
-    ],
-    "background": {
-        "scripts": ["alerts_bin.js", "dev_background_bin.js"],
-        "persistent": false
-    },
-    "browser_action": {
-	"default_popup": "popup.html",
-	"default_icon": {
+  "name": "Test Suspicious Site Reporter",
+  "version": "1.0",
+  "description": "Extension for reporting suspicious sites to Safe Browsing.",
+  "permissions": [
+      "https://test-safebrowsing.google.com/*",
+      "activeTab",
+      "history",
+      "safeBrowsingPrivate",
+      "tabs"
+  ],
+  "background": {
+      "scripts": ["alerts_bin.js", "dev_background_bin.js"],
+      "persistent": false
+  },
+  "browser_action": {
+  "default_popup": "popup.html",
+  "default_icon": {
             "16": "images/grayflag16.png",
             "48": "images/grayflag48.png",
             "128": "images/grayflag128.png"

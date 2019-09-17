@@ -137,7 +137,8 @@ describe('alerts', () => {
   });
 
   describe('hasMultipleUrlShortenerRedirects', () => {
-    it('should return true when the site has more than one redirect through a URL shortener',
+    it('should return true when the site has more than one redirect through a ' +
+           'URL shortener',
        () => {
          const redirectUrls = new Set([
            'http://goo.gl/test', 'https://goo.gl/test',
@@ -147,7 +148,8 @@ describe('alerts', () => {
              .toEqual(true);
        });
 
-    it('should return false when the site has one redirect through a URL shortener',
+    it('should return false when the site has one redirect through a URL ' +
+           'shortener',
        () => {
          const redirectUrls = new Set([
            'http://goo.gl/test', 'https://goo.gl/test',
@@ -164,7 +166,8 @@ describe('alerts', () => {
       expect(alerts.redirectsThroughSuspiciousTld(redirectUrls)).toEqual(true);
     });
 
-    it('should return false when the site does not redirect through a suspicious TLD',
+    it('should return false when the site does not redirect through a ' +
+           'suspicious TLD',
        () => {
          const redirectUrls = new Set(['http://test.com', 'https://test.com']);
          expect(alerts.redirectsThroughSuspiciousTld(redirectUrls))
@@ -172,37 +175,102 @@ describe('alerts', () => {
        });
   });
 
-  describe('fetchRedirectUrls', () => {
-    it('should return client and server redirect URLs from the referrer',
-       (done) => {
-         chrome.safeBrowsingPrivate = {
-           getReferrerChain: jasmine.createSpy(),
-         };
-         chrome.safeBrowsingPrivate.getReferrerChain.and.callFake(
-             (tabId, callback) => {
-               callback([
-                 {
-                   urlType: 'CLIENT_REDIRECT',
-                   referrerUrl: 'test.com',
-                   serverRedirectChain: [
-                     {url: 'url-shortener.test'}, {url: 'redirect-test.com'}
-                   ],
-                 },
-                 {
-                   urlType: 'LANDING_PAGE',
-                   referrerUrl: 'test.com',
-                 },
-               ]);
-             });
-
-         alerts.fetchRedirectUrls('redirect-test.com', /* tabId= */ 123)
-             .then((response) => {
-               expect(response.size).toEqual(3);
-               expect(response).toEqual(new Set(
-                   ['test.com', 'url-shortener.test', 'redirect-test.com']));
-               done();
-             });
+  describe('redirectsFromOutsideProgramOrWebmail', () => {
+    it('should return true when the redirect is initiated from outside program',
+       () => {
+         const redirectChain = [
+           {
+             urlType: 'CLIENT_REDIRECT',
+             referrerUrl: 'https://test.com',
+           },
+           {
+             urlType: 'CLIENT_REDIRECT',
+             referrerUrl: 'https://outside-program.test',
+             maybeLaunchedByExternalApp: true,
+           },
+         ];
+         expect(alerts.redirectsFromOutsideProgramOrWebmail(redirectChain))
+             .toEqual(true);
        });
+
+    it('should return true when the redirect is initiated from webmail', () => {
+      const redirectChain = [
+        {
+          urlType: 'CLIENT_REDIRECT',
+          referrerUrl: 'https://test.com',
+        },
+        {
+          urlType: 'CLIENT_REDIRECT',
+          referrerUrl: 'https://test.mail.google.com',
+        },
+      ];
+      expect(alerts.redirectsFromOutsideProgramOrWebmail(redirectChain))
+          .toEqual(true);
+    });
+
+    it('should return false when the redirect is not initiated from outside' +
+           'program or webmail',
+       () => {
+         const redirectChain = [
+           {
+             urlType: 'CLIENT_REDIRECT',
+             referrerUrl: 'https://test.com',
+           },
+           {
+             urlType: 'CLIENT_REDIRECT',
+             referrerUrl: 'https://example.test',
+           },
+         ];
+         expect(alerts.redirectsFromOutsideProgramOrWebmail(redirectChain))
+             .toEqual(false);
+       });
+  });
+
+  describe('redirect chain', () => {
+    const referrerChain = [
+      {
+        urlType: 'CLIENT_REDIRECT',
+        referrerUrl: 'test.com',
+        serverRedirectChain:
+            [{url: 'url-shortener.test'}, {url: 'redirect-test.com'}],
+      },
+      {
+        urlType: 'LANDING_PAGE',
+        referrerUrl: 'test.com',
+      },
+      {
+        urlType: 'RECENT_NAVIGATION',
+        referrerUrl: 'example-test.com',
+      },
+    ];
+    const redirectChain = referrerChain.slice(0, 1);
+
+    describe('getRedirectUrls', () => {
+      it('should return client and server redirect URLs from the referrer',
+         () => {
+           expect(alerts.getRedirectUrls(redirectChain)).toEqual(new Set([
+             'test.com', 'url-shortener.test', 'redirect-test.com'
+           ]));
+         });
+    });
+
+    describe('fetchRedirectChain', () => {
+      it('should return only the relevant redirect entries', (done) => {
+        chrome.safeBrowsingPrivate = {
+          getReferrerChain: jasmine.createSpy(),
+        };
+        chrome.safeBrowsingPrivate.getReferrerChain.and.callFake(
+            (tabId, callback) => {
+              callback(referrerChain);
+            });
+
+        alerts.fetchRedirectChain('redirect-test.com', /* tabId= */ 123)
+            .then((response) => {
+              expect(response).toEqual(redirectChain);
+              done();
+            });
+      });
+    });
   });
 
   describe('computeAlerts', () => {
