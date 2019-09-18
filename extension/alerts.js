@@ -241,6 +241,7 @@ const redirectsThroughSuspiciousTld = (redirectUrls) => {
  *     program or webmail.
  */
 const redirectsFromOutsideProgramOrWebmail = (redirectChain) => {
+  if (redirectChain.length === 0) return false;
   // Initial domain list--should be updated on a rolling basis.
   const webmailDomains = [
     'connect.xfinity.com',
@@ -346,7 +347,7 @@ const computeAlerts = async (url, tabId) => {
   if (!isTopSite(domain)) {
     newAlerts.push(ALERT_MESSAGES['notTopSite']);
     if (isIDN(domain)) newAlerts.push(ALERT_MESSAGES['isIDN']);
-    if (redirectsFromOutsideProgramOrWebmail(redirectChain))
+    if (redirectChain && redirectsFromOutsideProgramOrWebmail(redirectChain))
       newAlerts.push(ALERT_MESSAGES['redirectsFromOutsideProgramOrWebmail']);
   }
   if (!visited) newAlerts.push(ALERT_MESSAGES['notVisitedBefore']);
