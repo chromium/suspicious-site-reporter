@@ -224,6 +224,13 @@ describe('alerts', () => {
          expect(alerts.redirectsFromOutsideProgramOrWebmail(redirectChain))
              .toEqual(false);
        });
+
+    it('should return false when the redirect chain is empty',
+       () => {
+         const redirectChain = [];
+         expect(alerts.redirectsFromOutsideProgramOrWebmail(redirectChain))
+             .toEqual(false);
+       });
   });
 
   describe('redirect chain', () => {
