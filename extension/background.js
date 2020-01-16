@@ -110,7 +110,7 @@ class Background {
 
     /**
      * Sets the color of the flag icon.
-     * @param {!string} color The color to set the flag. Will be one of orange,
+     * @param {string} color The color to set the flag. Will be one of orange,
      *     green, or gray.
      * @param {!Tab} tab A Chrome Tab instance.
      */
@@ -199,6 +199,16 @@ class Background {
           report.addReferrerChain(parseReferrerEntry(entry));
         });
       }
+      // Since computeAlerts provides the full string displayed to the user,
+      // convert back to the key for the purpose of submitting to the backend.
+      this.alerts.forEach((alert) => {
+        for (let key in alerts.ALERT_MESSAGES) {
+          if (alerts.ALERT_MESSAGES[key] === alert) {
+            report.addFlags(key);
+            break;
+          }
+        }
+      });
       this.submitReport_(report, API_URL);
     }
   }
