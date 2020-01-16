@@ -35,10 +35,13 @@ message ChromeExtensionClientRequest {
   // comes last.
   repeated ReferrerChainEntry referrer_chain = 5;
 
+  // List of alerts triggered by the URL and displayed to the user.
+  repeated string flags = 6;
+
   // Deprecated tag numbers.
   reserved 2;
 
-  // next available tag number: 6
+  // next available tag number: 7
 }
 
 // ReferrerChainEntry should be kept in sync with the version in Chromium:
