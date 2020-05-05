@@ -110,8 +110,7 @@ class Background {
 
     /**
      * Sets the color of the flag icon.
-     * @param {string} color The color to set the flag. Will be one of orange,
-     *     green, or gray.
+     * @param {string} color The color to set the flag. Will be orange or gray.
      * @param {!Tab} tab A Chrome Tab instance.
      */
     const setFlagIconColor = (color, tab) => {
@@ -126,18 +125,6 @@ class Background {
     };
 
     if (alertList.length === 0) {
-      chrome.browserAction.setBadgeText({
-        text: '',
-        tabId: tab.id,
-      });
-      setFlagIconColor('green', tab);
-      return;
-    }
-    // To reduce noise, show a gray flag if the only signal is the not top
-    // site signal. This works because the top site signal is most useful when
-    // a website is also flagged for other reasons.
-    if (alertList.length === 1 &&
-        alertList.includes(alerts.ALERT_MESSAGES['notTopSite'])) {
       chrome.browserAction.setBadgeText({
         text: '',
         tabId: tab.id,
