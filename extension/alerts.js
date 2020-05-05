@@ -24,7 +24,6 @@ const Tld = goog.require('publicsuffix.Tld');
 const ALERT_MESSAGES = {
   'isIDN': 'Domain uses uncommon characters',
   'longSubdomains': 'Unusually long subdomains',
-  'notTopSite': 'Site not in top 5k sites',
   'notVisitedBefore': 'Haven\'t visited site in the last 3 months',
   'manySubdomains': 'Unusually many subdomains',
   'redirectsThroughSuspiciousTld':
@@ -342,15 +341,14 @@ const computeAlerts = async (url, tabId) => {
   const visited = await visitedBeforeToday(domain);
   const redirectChain = await fetchRedirectChain(domain, tabId);
   const redirectUrls = getRedirectUrls(redirectChain);
-  // Only warn about IDNs and redirect chain initiated from outside program when
-  // the final URL is not on a top site.
+  // Only warn about IDNs, redirect chain initiated from outside program, and
+  // unvisited sites when the final URL is not on a top site.
   if (!isTopSite(domain)) {
-    newAlerts.push(ALERT_MESSAGES['notTopSite']);
     if (isIDN(domain)) newAlerts.push(ALERT_MESSAGES['isIDN']);
     if (redirectChain && redirectsFromOutsideProgramOrWebmail(redirectChain))
       newAlerts.push(ALERT_MESSAGES['redirectsFromOutsideProgramOrWebmail']);
+    if (!visited) newAlerts.push(ALERT_MESSAGES['notVisitedBefore']);
   }
-  if (!visited) newAlerts.push(ALERT_MESSAGES['notVisitedBefore']);
   if (hasManySubdomains(domain))
     newAlerts.push(ALERT_MESSAGES['manySubdomains']);
   if (hasLongSubdomains(domain))

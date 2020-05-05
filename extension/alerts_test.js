@@ -291,9 +291,8 @@ describe('alerts', () => {
               'http://very-very-long-subdomain.many.many.subdomains.example.com',
               /* tabId= */ 123)
           .then((response) => {
-            expect(response.length).toEqual(3);
+            expect(response.length).toEqual(2);
             expect(response).toContain(alerts.ALERT_MESSAGES['longSubdomains']);
-            expect(response).toContain(alerts.ALERT_MESSAGES['notTopSite']);
             expect(response).toContain(alerts.ALERT_MESSAGES['manySubdomains']);
           });
 
@@ -302,9 +301,8 @@ describe('alerts', () => {
               'http://new-few-very-long-subdomain.example.com',
               /* tabId= */ 123)
           .then((response) => {
-            expect(response.length).toEqual(3);
+            expect(response.length).toEqual(2);
             expect(response).toContain(alerts.ALERT_MESSAGES['longSubdomains']);
-            expect(response).toContain(alerts.ALERT_MESSAGES['notTopSite']);
             expect(response).toContain(
                 alerts.ALERT_MESSAGES['notVisitedBefore']);
           });
